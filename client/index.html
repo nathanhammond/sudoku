@@ -7,7 +7,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-  <title>Design Game Study</title>
+  <title>Sudoku</title>
 
   <meta name="viewport" content="width=device-width">
   <link rel="stylesheet" href="_css/style.css">
@@ -20,10 +20,24 @@
        chromium.org/developers/how-tos/chrome-frame-getting-started -->
   <!--[if lt IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to experience this site.</p><![endif]-->
 
-  <h1>Design Game Study</h1>
+  <h1>Sudoku</h1>
 
   <div id="container">
-    <table id="board"><tbody></tbody></table>
+    <table id="board">
+      <colgroup>
+        <col>
+        <col id="column0">
+        <col id="column1">
+        <col id="column2">
+        <col id="column3">
+        <col id="column4">
+        <col id="column5">
+        <col id="column6">
+        <col id="column7">
+        <col id="column8">
+      </colgroup>
+    <tbody></tbody>
+    </table>
   </div>
 
   <!-- Grab Google CDN's jQuery, with a protocol relative URL; fall back to local if offline -->
@@ -33,28 +47,118 @@
   <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.js"></script>
   <script>window.jQuery.ui || document.write('<script src="_js/jquery-ui.min.js"><\/script>')</script>
   <script src="_js/jquery.ba-throttle-debounce.min.js"></script>
+  <script src="_js/jquery.textchange.js"></script>
   
 
   <script>
+    
     var $container = $('#container');
     var $board = $('#board tbody');
     var buildstring = '';
-    for (var i = 0; i < 81; i++) {
-      if (i%9 == 0) { buildstring += '<tr>' }
-      buildstring += '<td><input type="text" id="box'+i+'" value ="" size="1" maxlength="1" /></td>'
-      if (i%9 == 8) { buildstring += '</tr>' }
+    var color;
+    for (var i = 0; i < 100; i++) {
+      if (i%10 == 0) { buildstring += '<tr id="row'+(i/10)+'" >' }
+      if (i == 0) {
+        buildstring += '<td></td>';
+      }
+      else if (i<10) {
+        buildstring += '<td id="col'+(i-1)+'" class="select-col"><a href="#">&darr;</a></td>';
+      }
+      else if (i%10==0) {
+        buildstring += '<td class="select-row"><a href="#">&rarr;</a></td>';
+      }
+      else {
+        buildstring += '<td><input type="text" id="box'+i+'" value ="" size="1" maxlength="1" /></td>';
+      }
+      if (i%10 == 9) { buildstring += '</tr>'; }
     }
 
     $board.append(buildstring);
+    
+    $('.select-col>a').on('click', function(e) {
+      var id = $(e.target).parent().attr('id');
+      var numericalid = id.split('col')[1];
 
-    var socket = io.connect('/');
-    socket.on('msg', function (data) {
-      onMessage(data);
-      // console.log(data);
-      // TODO: Do stuff.
+      var currentstate = $('#column'+numericalid).data('active') || false;
+
+      socket.emit('msg', {messagetype:"selectcol", col:numericalid});
+      
+      highlightCol(numericalid, color);
+    });
+
+    $('.select-row>a').on('click', function(e) {
+      var id = $(e.target).parent().parent().attr('id');
+      var currentstate = $('#'+id).data('active') || false;
+
+      socket.emit('msg', {messagetype:"selectrow", row:id});
+      
+      highlightRow(id, color);
     });
     
-    </script>
+    function highlightRow(id, color) {
+      var currentstate = $('#'+id).data('active') || false;
+
+      if (currentstate == true) {
+        // is active, remove background
+        $('#'+id).css('background', 'none');
+      } else {
+        $('#'+id).css('background', color);        
+      }
+
+      $('#'+id).data('active', !currentstate);
+    }
+
+    function highlightCol(numericalid, color)
+    {
+      var currentstate = $('#column'+numericalid).data('active') || false;
+
+      if (currentstate == true) {
+        // is active, remove background
+        $('#column'+numericalid).css('background', 'none');
+      } else {
+        $('#column'+numericalid).css('background', color);        
+      }
+
+      $('#column'+numericalid).data('active', !currentstate);
+    }
+    
+    var socket = io.connect('/');
+    socket.on('msg', function (data) {
+      if (data.messagetype == 'change') {
+        $('#'+data.id).val(data.value);
+      } else if (data.messagetype == 'focus') {
+        $('#'+data.id).css("background", data.color);
+      } else if (data.messagetype == 'blur') {
+        $('#'+data.id).css("background", "none");
+      } else if (data.messagetype == 'selectcol') {
+        highlightCol(data.col, data.color);
+      } else if (data.messagetype == 'selectrow') {
+        highlightRow(data.row, data.color);
+      } else if (data.messagetype == 'color') {
+        color = data.color;
+      }
+    });
+
+    $('input').on('focus', function(e) {
+      socket.emit('msg', {messagetype: "focus", id:e.target.id });
+    });
+    
+    $('input').on('blur', function(e) {
+      socket.emit('msg', {messagetype: "blur", id:e.target.id });
+    });
+
+    $('input').on('textchange', function(e) {
+      var isDigit = /^[\d]{0,1}$/.test(e.target.value);
+      if (isDigit) {
+        socket.emit('msg', {messagetype: "change", id: e.target.id, value: e.target.value });        
+      } else {
+        e.target.value = '';
+        e.preventDefault();
+      }
+    });
+
+
+  </script>
 
 </body>
 </html>
