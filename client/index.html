@@ -7,7 +7,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-  <title>Sudoku</title>
+  <title>Team Sudoku</title>
 
   <meta name="viewport" content="width=device-width">
   <link rel="stylesheet" href="_css/style.css">
@@ -20,10 +20,10 @@
        chromium.org/developers/how-tos/chrome-frame-getting-started -->
   <!--[if lt IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to experience this site.</p><![endif]-->
 
-  <h1>Sudoku</h1>
+  <h1>Team Sudoku</h1>
 
   <div id="container">
-    <table id="board">
+    <table id="board" cellspacing="0">
       <colgroup>
         <col>
         <col id="column0">
@@ -51,30 +51,48 @@
   
 
   <script>
-    
+    var preload = false;
+	$.ajax({
+	  url: 'init.json',
+	  dataType: 'json',
+	  success: function(data) {
+		preload = data.puzzle;
+		bootstrap();		
+	  },
+	  error: function(data){
+		console.log(arguments);
+	  }
+	});
     var $container = $('#container');
     var $board = $('#board tbody');
     var buildstring = '';
     var color;
-    for (var i = 0; i < 100; i++) {
-      if (i%10 == 0) { buildstring += '<tr id="row'+(i/10)+'" >' }
-      if (i == 0) {
-        buildstring += '<td></td>';
-      }
-      else if (i<10) {
-        buildstring += '<td id="col'+(i-1)+'" class="select-col"><a href="#">&darr;</a></td>';
-      }
-      else if (i%10==0) {
-        buildstring += '<td class="select-row"><a href="#">&rarr;</a></td>';
-      }
-      else {
-        buildstring += '<td><input type="text" id="box'+i+'" value ="" size="1" maxlength="1" /></td>';
-      }
-      if (i%10 == 9) { buildstring += '</tr>'; }
-    }
-
-    $board.append(buildstring);
+	var count = 0;
     
+
+    
+    
+	function bootstrap() {
+		for (var i = 0; i < 100; i++) {
+	      if (i%10 == 0) { buildstring += '<tr id="row'+(i/10)+'" >' }
+	      if (i == 0) {
+	        buildstring += '<td></td>';
+	      } else if (i<10) {
+	        buildstring += '<td id="col'+(i-1)+'" class="select-col"><a href="#">&darr;</a></td>';
+	      } else if (i%10==0) {
+	        buildstring += '<td class="select-row"><a href="#">&rarr;</a></td>';
+	      } else if (preload && preload[count]){
+			buildstring += '<td><input type="text" id="box'+i+'" disabled="disabled" value ="'+ preload[count++] +'" size="1" maxlength="1" /></td>';
+		  } else {
+			count++;
+	        buildstring += '<td><input type="text" id="box'+i+'" value ="" size="1" maxlength="1" /></td>';
+	      }
+		  
+	      if (i%10 == 9) { buildstring += '</tr>'; }
+	    }
+		$board.append(buildstring);
+	}
+
     $('.select-col>a').on('click', function(e) {
       var id = $(e.target).parent().attr('id');
       var numericalid = id.split('col')[1];
@@ -100,7 +118,7 @@
 
       if (currentstate == true) {
         // is active, remove background
-        $('#'+id).css('background', 'none');
+        $('#'+id).css('background', '#FFF');
       } else {
         $('#'+id).css('background', color);        
       }
@@ -114,7 +132,7 @@
 
       if (currentstate == true) {
         // is active, remove background
-        $('#column'+numericalid).css('background', 'none');
+        $('#column'+numericalid).css('background', '#FFF');
       } else {
         $('#column'+numericalid).css('background', color);        
       }
@@ -129,7 +147,7 @@
       } else if (data.messagetype == 'focus') {
         $('#'+data.id).css("background", data.color);
       } else if (data.messagetype == 'blur') {
-        $('#'+data.id).css("background", "none");
+        $('#'+data.id).css("background", "#FFF");
       } else if (data.messagetype == 'selectcol') {
         highlightCol(data.col, data.color);
       } else if (data.messagetype == 'selectrow') {
