@@ -23,8 +23,7 @@
   <h1>Design Game Study</h1>
 
   <div id="container">
-    <section id="board">
-    </section>
+    <table id="board"><tbody></tbody></table>
   </div>
 
   <!-- Grab Google CDN's jQuery, with a protocol relative URL; fall back to local if offline -->
@@ -37,130 +36,16 @@
   
 
   <script>
-    var images = [];
-    for (var i = 0; i < 24; i++) {
-      images.push(new Image());
-      images[i].src = "";
-      images[i].width = "50";
-      images[i].height = "50";
-      images[i].style.top = Math.floor(Math.random() * 98) + 150 + "px";
-      images[i].style.left = Math.floor(Math.random() * 800) + "px";
-      images[i].id = "img"+i;
-      
-      $('#container').append(images[i]);
+    var $container = $('#container');
+    var $board = $('#board tbody');
+    var buildstring = '';
+    for (var i = 0; i < 81; i++) {
+      if (i%9 == 0) { buildstring += '<tr>' }
+      buildstring += '<td><input type="text" id="box'+i+'" value ="" width="1" maxlength="1" /></td>'
+      if (i%9 == 8) { buildstring += '</tr>' }
     }
-    
-    $("#container > img").draggable({
-      stack: "img",
-      drag: $.throttle(100, sendDragMessage),
-      snap: false,
-      snapmode: "outer"
-    });
-    
-    $("#board").droppable({
-      tolerance: "fit",
-      greedy: true,
-      drop: function(event, ui) {
-        // Move the element into the "board" parent container.
-        var origin = $("#board").offset();
-        $("#board").append(ui.draggable);
 
-        var newleft = ui.offset.left - origin.left;
-        var newtop = ui.offset.top - origin.top;
-        sendDropMessage(event, ui);
-        ui.draggable.css({top: newtop, left: newleft});
-        
-        // Remove the current event. Workaround bug #8269.
-        setTimeout(function() {
-          ui.draggable.draggable('destroy'); 
-
-          ui.draggable.draggable({
-            containment: "#container",
-            snap: false,
-            snapmode: "outer"
-          });
-        },1);
-      }
-    });
-    
-    $("#container").droppable({
-      tolerance: "fit",
-      drop: function(event, ui) {
-        // Move the element into the "board" parent container.
-        var origin = $("#container").offset();
-        $("#container").append(ui.draggable);
-
-        var newleft = ui.offset.left - origin.left;
-        var newtop = ui.offset.top - origin.top;
-        sendDropMessage(event, ui);
-        ui.draggable.css({top: newtop, left: newleft});
-        
-        // Remove the current event. Workaround bug #8269.
-        setTimeout(function() {
-          ui.draggable.draggable('destroy'); 
-
-          ui.draggable.draggable({
-            stack: "img",
-            drag: $.throttle(100, sendDragMessage),
-            snap: false,
-            snapmode: "outer"
-          });
-        },1);
-      }      
-    });
-    
-    function sendDragMessage(event, ui) {
-      // Send message to server.
-      var data = {
-        imgid: ui.helper.attr("id"),
-        eventtype: "drag",
-        position: {left: ui.offset.left, top: ui.offset.top, z:ui.helper.css("zIndex")},
-        related: false
-      };
-      socket.emit('msg', data);
-    }
-    
-    function sendDropMessage(event, ui) {
-      // Send message to server.
-      
-      var data = {
-        imgid: ui.helper.attr("id"),
-        eventtype: "drop",
-        position: {left: ui.offset.left, top: ui.offset.top, z:ui.helper.css("zIndex")},
-        related: ui.draggable.parent().attr("id")
-      };
-      socket.emit('msg', data);
-    }
-    
-    function onMessage(message) {
-      // Move the picture.
-      // console.log(arguments);
-      // debugger;
-      if (message.eventtype == "drag") {
-        var dragged = $("#"+message.imgid);
-        var newtop = message.position.top - dragged.parent().offset().top;
-        var newleft = message.position.left - dragged.parent().offset().left;
-        dragged.css({top:newtop,left:newleft,zIndex:message.position.z});
-        // console.log($("#"+message.imgid));
-      }
-      else {
-            var dropped = $("#"+message.imgid);
-			$("#"+message.related).append(dropped);
-			var newtop = message.position.top-dropped.parent().offset().top;
-			var newleft = message.position.left-dropped.parent().offset().left;
-              dropped.css({top:newtop,left:newleft,zIndex:message.position.z});
-      //         setTimeout(function() {
-      //           $("#"+message.imgid).draggable('destroy'); 
-      // 
-      //           $("#"+message.imgid).draggable({
-      //             stack: "img",
-      //             drag: $.throttle(100, sendDragMessage),
-      //             snap: false,
-      //             snapmode: "outer"
-      //           });
-      //         },1);
-      }
-    }
+    $board.append(buildstring);
 
     var socket = io.connect('/');
     socket.on('msg', function (data) {
