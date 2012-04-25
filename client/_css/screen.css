@@ -18,7 +18,7 @@ tr:first-child td:nth-child(3n+1) {border-right:3px solid #FFF;}
 td { line-height: 2em; }
 input {border: 0; width: 2em; height: 2em; display: block; margin: 0; padding: 0; text-align: center; }
 
-input[disabled] {background: #999};
+input[disabled] {color:#fff; background: #000};
 
 /*#row9 {border-bottom:3px solid black;}
 #column8 {border-right:3px solid black;}*/

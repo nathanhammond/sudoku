@@ -91,27 +91,47 @@
 	      if (i%10 == 9) { buildstring += '</tr>'; }
 	    }
 		$board.append(buildstring);
+		
+		$('.select-col>a').on('click', function(e) {
+	      var id = $(e.target).parent().attr('id');
+	      var numericalid = id.split('col')[1];
+
+	      var currentstate = $('#column'+numericalid).data('active') || false;
+
+	      socket.emit('msg', {messagetype:"selectcol", col:numericalid});
+
+	      highlightCol(numericalid, color);
+	    });
+
+	    $('.select-row>a').on('click', function(e) {
+	      var id = $(e.target).parent().parent().attr('id');
+	      var currentstate = $('#'+id).data('active') || false;
+
+	      socket.emit('msg', {messagetype:"selectrow", row:id});
+
+	      highlightRow(id, color);
+	    });
+	
+		$('input').on('focus', function(e) {
+	      socket.emit('msg', {messagetype: "focus", id:e.target.id });
+	    });
+
+	    $('input').on('blur', function(e) {
+	      socket.emit('msg', {messagetype: "blur", id:e.target.id });
+	    });
+
+	    $('input').on('textchange', function(e) {
+	      var isDigit = /^[\d]{0,1}$/.test(e.target.value);
+	      if (isDigit) {
+	        socket.emit('msg', {messagetype: "change", id: e.target.id, value: e.target.value });        
+	      } else {
+	        e.target.value = '';
+	        e.preventDefault();
+	      }
+	    });
 	}
 
-    $('.select-col>a').on('click', function(e) {
-      var id = $(e.target).parent().attr('id');
-      var numericalid = id.split('col')[1];
-
-      var currentstate = $('#column'+numericalid).data('active') || false;
-
-      socket.emit('msg', {messagetype:"selectcol", col:numericalid});
-      
-      highlightCol(numericalid, color);
-    });
-
-    $('.select-row>a').on('click', function(e) {
-      var id = $(e.target).parent().parent().attr('id');
-      var currentstate = $('#'+id).data('active') || false;
-
-      socket.emit('msg', {messagetype:"selectrow", row:id});
-      
-      highlightRow(id, color);
-    });
+    
     
     function highlightRow(id, color) {
       var currentstate = $('#'+id).data('active') || false;
@@ -157,23 +177,7 @@
       }
     });
 
-    $('input').on('focus', function(e) {
-      socket.emit('msg', {messagetype: "focus", id:e.target.id });
-    });
     
-    $('input').on('blur', function(e) {
-      socket.emit('msg', {messagetype: "blur", id:e.target.id });
-    });
-
-    $('input').on('textchange', function(e) {
-      var isDigit = /^[\d]{0,1}$/.test(e.target.value);
-      if (isDigit) {
-        socket.emit('msg', {messagetype: "change", id: e.target.id, value: e.target.value });        
-      } else {
-        e.target.value = '';
-        e.preventDefault();
-      }
-    });
 
 
   </script>
